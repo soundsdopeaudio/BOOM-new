@@ -706,6 +706,7 @@ void BoomAudioProcessorEditor::resized()
     btnBumppit.setBounds(S(580, 280, 200, 60));
     btnFlippit.setBounds(S(580, 350, 200, 60));
     btnRolls.setBounds(S(40, 370, 160, 43));
+    hatsBtn.setBounds(S(40, 320, 160, 43));
     btnAITools.setBounds(S(290, 350, 200, 60));
 
     // DRUM GRID (main window) — exact size
@@ -1875,7 +1876,43 @@ void HatsWindow::paint(juce::Graphics& g)
 
 void HatsWindow::resized()
 {
+    auto bounds = getLocalBounds();
+    const int W = bounds.getWidth();
+    const int H = bounds.getHeight();
 
+    // 1. Title and description
+    hatsLbl.setBounds((W - 258) / 2, 15, 258, 131);
+    hatsDescriptionLbl.setBounds((W - 400) / 2, 150, 400, 50);
+
+    // 2. Combo boxes and labels
+    const int itemWidth = 150;
+    const int labelHeight = 26;
+    const int comboBoxHeight = 24;
+    const int horizontalSpacing = 20;
+    const int verticalSpacing = 5;
+    const int totalLayoutWidth = (3 * itemWidth) + (2 * horizontalSpacing);
+    int currentX = (W - totalLayoutWidth) / 2;
+    int labelY = 220;
+    int boxY = labelY + labelHeight + verticalSpacing;
+
+    // Style
+    styleLbl.setBounds(currentX, labelY, itemWidth, labelHeight);
+    styleBox.setBounds(currentX, boxY, itemWidth, comboBoxHeight);
+    currentX += itemWidth + horizontalSpacing;
+
+    // Time Sig
+    timeSigLbl.setBounds(currentX, labelY, itemWidth, labelHeight);
+    timeSigBox.setBounds(currentX, boxY, itemWidth, comboBoxHeight);
+    currentX += itemWidth + horizontalSpacing;
+
+    // Bars
+    barsLbl.setBounds(currentX, labelY, itemWidth, labelHeight);
+    barsBox.setBounds(currentX, boxY, itemWidth, comboBoxHeight);
+
+    // 3. Buttons
+    diceBtn.setBounds((W - 100) / 2, 300, 100, 100);
+    btnHome.setBounds(W - 80, H - 80, 60, 60);
+    btnSaveMidi.setBounds(20, H - 80, 150, 50);
 }
 
 
