@@ -2483,75 +2483,79 @@ RollsWindow::RollsWindow(BoomAudioProcessor& p, std::function<void()> onClose, s
     };
 
 
-    // === ROLLS: Generate and Save batch of snare-roll patterns ===
     btnGenerate.onClick = [this]
         {
-            // BARS
-            int bars = 4;
-            if (auto* barsParam = proc.apvts.getParameter("bars"))
-                if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(barsParam))
-                    bars = choice->getCurrentChoiceName().getIntValue();
+            auto* fc = new juce::FileChooser("Select destination folder...",
+                juce::File::getSpecialLocation(juce::File::userDesktopDirectory),
+                "*", true);
 
-            // STYLE (same as hats or a dedicated 'roll style' if you have it)
-            juce::String style = "trap";
-            if (auto* styleParam = proc.apvts.getParameter("style"))
-                if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(styleParam))
+            fc->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                [this, fc](const juce::FileChooser& chooser)
                 {
-                    const int idx = choice->getIndex();
-                    auto styles = boom::drums::styleNames();
-                    if (styles.size() > 0)
-                        style = styles[juce::jlimit(0, styles.size() - 1, idx)];
-                }
-
-            // how many from UI
-            int howMany = 25;
-            if (howManyBox.getSelectedId() > 0) howMany = howManyBox.getSelectedId();
-
-            // densities
-            auto clampPct = [](float v) -> int { return juce::jlimit(0, 100, (int)juce::roundToInt(v)); };
-            int restPct = 0, dottedPct = 0, tripletPct = 0, swingPct = 0;
-            if (auto* rp = proc.apvts.getRawParameterValue("restDensity")) restPct = clampPct(rp->load());
-            if (auto* dp = proc.apvts.getRawParameterValue("dottedDensity")) dottedPct = clampPct(dp->load());
-            if (auto* tp = proc.apvts.getRawParameterValue("tripletDensity")) tripletPct = clampPct(tp->load());
-            if (auto* sp = proc.apvts.getRawParameterValue("swing")) swingPct = clampPct(sp->load());
-
-            boom::drums::DrumStyleSpec spec = boom::drums::getSpec(style);
-
-            // Build mask that only includes snare rows. Replace with your snare row index. (example: row 1)
-            uint32_t snareMask = (1u << 1); // change 1 to your snare row index
-
-            // For rolls we might want amplified velocities and shorter lengths. You can post-process
-            // the generated pattern before export if you want more "roll" character. For now we export as-is.
-// --- Read time signature from APVTS ("timeSig" AudioParameterChoice) ---
-// read time signature from APVTS
-// read time signature from APVTS
-            int numerator = 4, denominator = 4;
-            if (auto* tsParam = proc.apvts.getParameter("timeSig"))
-                if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(tsParam))
-                {
-                    juce::String ts = choice->getCurrentChoiceName();
-                    auto parts = juce::StringArray::fromTokens(ts, "/", "");
-                    if (parts.size() == 2)
+                    juce::File destFolder = chooser.getResult();
+                    if (destFolder.isDirectory())
                     {
-                        numerator = parts[0].getIntValue();
-                        denominator = parts[1].getIntValue();
-                        if (numerator <= 0) numerator = 4;
-                        if (denominator <= 0) denominator = 4;
+                        // BARS
+                        int bars = 4;
+                        if (barsBox.getSelectedId() > 0)
+                            bars = barsBox.getText().getIntValue();
+
+                        // STYLE
+                        juce::String style = styleBox.getText();
+
+                        // HOW MANY
+                        int howMany = 5;
+                        if (howManyBox.getSelectedId() > 0)
+                            howMany = howManyBox.getText().getIntValue();
+
+                        // DENSITIES
+                        auto clampPct = [](float v) -> int { return juce::jlimit(0, 100, (int)juce::roundToInt(v)); };
+                        int restPct = 0, dottedPct = 0, tripletPct = 0, swingPct = 0;
+                        if (auto* rp = proc.apvts.getRawParameterValue("restDensityDrums")) restPct = clampPct(rp->load());
+                        if (auto* dp = proc.apvts.getRawParameterValue("dottedDensity")) dottedPct = clampPct(dp->load());
+                        if (auto* tp = proc.apvts.getRawParameterValue("tripletDensity")) tripletPct = clampPct(tp->load());
+                        if (auto* sp = proc.apvts.getRawParameterValue("swing")) swingPct = clampPct(sp->load());
+
+                        boom::drums::DrumStyleSpec spec = boom::drums::getSpec(style);
+                        uint32_t snareMask = (1u << 1);
+
+                        // TIME SIGNATURE
+                        int numerator = 4, denominator = 4;
+                        juce::String ts = timeSigBox.getText();
+                        auto parts = juce::StringArray::fromTokens(ts, "/", "");
+                        if (parts.size() == 2)
+                        {
+                            numerator = parts[0].getIntValue();
+                            denominator = parts[1].getIntValue();
+                            if (numerator <= 0) numerator = 4;
+                            if (denominator <= 0) denominator = 4;
+                        }
+
+                        for (int i = 0; i < howMany; ++i)
+                        {
+                            juce::String fileName = "BOOM_Roll_" + juce::String(i + 1) + ".mid";
+                            juce::File destFile = destFolder.getChildFile(fileName);
+
+                            juce::File tmp = buildBatchDrumMidi(
+                                "BOOM_RollsBatch_" + juce::String(i),
+                                spec,
+                                bars,
+                                1, // Generate one pattern per file
+                                restPct, dottedPct, tripletPct, swingPct,
+                                /*seed*/ -1,
+                                snareMask,
+                                numerator,
+                                denominator);
+
+                            if (tmp.existsAsFile())
+                            {
+                                tmp.copyFileTo(destFile);
+                                DBG("RollsWindow: created " << destFile.getFullPathName());
+                            }
+                        }
                     }
-                }
-
-            juce::File tmp = buildBatchDrumMidi("BOOM_RollsBatch",
-                spec,
-                bars,
-                howMany,
-                restPct, dottedPct, tripletPct, swingPct,
-                /*seed*/ -1,
-                snareMask,
-                numerator,
-                denominator);
-
-            DBG("RollsWindow: tmp=" << tmp.getFullPathName() << " size=" << tmp.getSize());
-            launchSaveMidiChooserAsync("BOOM_RollsBatch", tmp, "BOOM_Rolls.mid");
+                    delete fc;
+                });
         };
 
 
