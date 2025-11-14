@@ -2169,7 +2169,7 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
 
     // --- combo boxes ---
     addAndMakeVisible(styleBox);
-    styleBox.addItemList(boom::styleChoices(), 1);
+    styleBox.addItemList(boom::drums::styleNames(), 1);
     styleBox.setSelectedId(1, juce::dontSendNotification);
 
     addAndMakeVisible(timeSigBox);
@@ -2186,7 +2186,7 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
     howManyBox.addItem("25", 25);
     howManyBox.addItem("50", 50);
     howManyBox.addItem("100", 100);
-    howManyBox.setSelectedId(1, juce::dontSendNotification);
+    howManyBox.setSelectedId(5, juce::dontSendNotification);
 
     // --- triplets / dotted with your checkbox art ---
     tripletsLblImg.setImage(loadSkin("tripletsLbl.png")); tripletsLblImg.setInterceptsMouseClicks(false, false);
@@ -2233,26 +2233,9 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
     btnGenerate.onClick = [this]
         {
             // read UI selections
-            int bars = 4;
-            if (auto* barsParam = proc.apvts.getParameter("bars"))
-                if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(barsParam))
-                    bars = choice->getCurrentChoiceName().getIntValue();
-
-            // style from UI choice (or fallback)
-            juce::String style = "trap";
-            if (auto* styleParam = proc.apvts.getParameter("style"))
-                if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(styleParam))
-                {
-                    const int idx = choice->getIndex();
-                    auto styles = boom::drums::styleNames();
-                    if (styles.size() > 0)
-                        style = styles[juce::jlimit(0, styles.size() - 1, idx)];
-                }
-
-            // how many patterns to create (from your howManyBox choices)
-            int howMany = 25;
-            if (howManyBox.getSelectedId() > 0)
-                howMany = howManyBox.getSelectedId(); // set the choice ids to exactly 5,25,50,100
+            const int bars = barsBox.getText().getIntValue();
+            const juce::String style = styleBox.getText();
+            const int howMany = howManyBox.getSelectedId();
 
             // densities from APVTS (fallback safe)
             auto clampPct = [](float v) -> int { return juce::jlimit(0, 100, (int)juce::roundToInt(v)); };
@@ -2271,21 +2254,17 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
             uint32_t hatRowIndicesMask = (1u << 2) | (1u << 3); // << replace if your hi-hat indexes differ
 
             // Build the batch midi
-// read time signature from APVTS
+            // read time signature from UI
             int numerator = 4, denominator = 4;
-            if (auto* tsParam = proc.apvts.getParameter("timeSig"))
-                if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(tsParam))
-                {
-                    juce::String ts = choice->getCurrentChoiceName();
-                    auto parts = juce::StringArray::fromTokens(ts, "/", "");
-                    if (parts.size() == 2)
-                    {
-                        numerator = parts[0].getIntValue();
-                        denominator = parts[1].getIntValue();
-                        if (numerator <= 0) numerator = 4;
-                        if (denominator <= 0) denominator = 4;
-                    }
-                }
+            juce::String ts = timeSigBox.getText();
+            auto parts = juce::StringArray::fromTokens(ts, "/", "");
+            if (parts.size() == 2)
+            {
+                numerator = parts[0].getIntValue();
+                denominator = parts[1].getIntValue();
+                if (numerator <= 0) numerator = 4;
+                if (denominator <= 0) denominator = 4;
+            }
 
             juce::File tmp = buildBatchDrumMidi("BOOM_HatsBatch",
                 spec,
@@ -2303,10 +2282,44 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
         };
 
 
+    btnDragMidi.onClick = [this]
+        {
+            // Same logic as generate, but creates one temp file to drag
+            const int bars = barsBox.getText().getIntValue();
+            const juce::String style = styleBox.getText();
+
+            auto clampPct = [](float v) -> int { return juce::jlimit(0, 100, (int)juce::roundToInt(v)); };
+            int restPct = 0, dottedPct = 0, tripletPct = 0, swingPct = 0;
+            if (auto* rp = proc.apvts.getRawParameterValue("restDensity")) restPct = clampPct(rp->load());
+            if (auto* dp = proc.apvts.getRawParameterValue("dottedDensity")) dottedPct = clampPct(dp->load());
+            if (auto* tp = proc.apvts.getRawParameterValue("tripletDensity")) tripletPct = clampPct(tp->load());
+            if (auto* sp = proc.apvts.getRawParameterValue("swing")) swingPct = clampPct(sp->load());
+
+            boom::drums::DrumStyleSpec spec = boom::drums::getSpec(style);
+            uint32_t hatRowIndicesMask = (1u << 2) | (1u << 3);
+
+            int numerator = 4, denominator = 4;
+            juce::String ts = timeSigBox.getText();
+            auto parts = juce::StringArray::fromTokens(ts, "/", "");
+            if (parts.size() == 2)
+            {
+                numerator = parts[0].getIntValue();
+                denominator = parts[1].getIntValue();
+                if (numerator <= 0) numerator = 4;
+                if (denominator <= 0) denominator = 4;
+            }
+
+            juce::File tmp = buildBatchDrumMidi("BOOM_HatsTemp", spec, bars, 1,
+                restPct, dottedPct, tripletPct, swingPct, -1,
+                hatRowIndicesMask, numerator, denominator);
+
+            performFileDrag(tmp);
+        };
+
     btnSaveMidi.onClick = [this]
         {
-            juce::File src = buildTempMidi();
-            launchSaveMidiChooserAsync("Save MIDI...", src, "BOOM_HH_MIDI.mid");
+            // Re-route to the Generate button's handler, which now does the saving
+            btnGenerate.onClick();
         };
 
     // tooltips (matches your other windows style)

@@ -375,7 +375,6 @@ public:
     juce::ImageButton btnGenerate;
 
 
-    juce::File buildTempMidi(const juce::String& base) const;
     void performFileDrag(const juce::File& f);
 
     // --- Read time signature from APVTS ("timeSig" AudioParameterChoice) ---
