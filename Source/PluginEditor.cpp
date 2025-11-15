@@ -2146,53 +2146,65 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
     // === HATS: Generate and Save batch handler ===
     btnGenerate.onClick = [this]
         {
-            // read UI selections
-            const int bars = barsBox.getText().getIntValue();
-            const juce::String style = styleBox.getText();
-            const int howMany = howManyBox.getSelectedId();
+            auto* fc = new juce::FileChooser("Select destination folder...",
+                juce::File::getSpecialLocation(juce::File::userDesktopDirectory),
+                "*", true);
 
-            // densities from APVTS (fallback safe)
-            auto clampPct = [](float v) -> int { return juce::jlimit(0, 100, (int)juce::roundToInt(v)); };
-            int restPct = 0, dottedPct = 0, tripletPct = 0, swingPct = 0;
-            if (auto* rp = proc.apvts.getRawParameterValue("restDensity")) restPct = clampPct(rp->load());
-            if (auto* dp = proc.apvts.getRawParameterValue("dottedDensity")) dottedPct = clampPct(dp->load());
-            if (auto* tp = proc.apvts.getRawParameterValue("tripletDensity")) tripletPct = clampPct(tp->load());
-            if (auto* sp = proc.apvts.getRawParameterValue("swing")) swingPct = clampPct(sp->load());
+            fc->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                [this, fc](const juce::FileChooser& chooser)
+                {
+                    juce::File destFolder = chooser.getResult();
+                    if (destFolder.isDirectory())
+                    {
+                        const int bars = barsBox.getText().getIntValue();
+                        const juce::String style = styleBox.getText();
+                        const int howMany = howManyBox.getSelectedId();
 
-            // get the spec for the chosen style
-            boom::drums::DrumStyleSpec spec = boom::drums::getSpec(style);
+                        auto clampPct = [](float v) -> int { return juce::jlimit(0, 100, (int)juce::roundToInt(v)); };
+                        int restPct = 0, dottedPct = 0, tripletPct = 0, swingPct = 0;
+                        if (auto* rp = proc.apvts.getRawParameterValue("restDensity")) restPct = clampPct(rp->load());
+                        if (auto* dp = proc.apvts.getRawParameterValue("dottedDensity")) dottedPct = clampPct(dp->load());
+                        if (auto* tp = proc.apvts.getRawParameterValue("tripletDensity")) tripletPct = clampPct(tp->load());
+                        if (auto* sp = proc.apvts.getRawParameterValue("swing")) swingPct = clampPct(sp->load());
 
-            // build a mask to only include hi-hat rows. Adjust the row indices to match your layout.
-            // Example: if hi-hat is row index 2 and open-hat index 3, mask = (1<<2) | (1<<3)
-            // Replace indices with the ones used in your DrumGridComponent.
-            uint32_t hatRowIndicesMask = (1u << 2) | (1u << 3); // << replace if your hi-hat indexes differ
+                        boom::drums::DrumStyleSpec spec = boom::drums::getSpec(style);
+                        uint32_t hatRowIndicesMask = (1u << 2) | (1u << 3);
 
-            // Build the batch midi
-            // read time signature from UI
-            int numerator = 4, denominator = 4;
-            juce::String ts = timeSigBox.getText();
-            auto parts = juce::StringArray::fromTokens(ts, "/", "");
-            if (parts.size() == 2)
-            {
-                numerator = parts[0].getIntValue();
-                denominator = parts[1].getIntValue();
-                if (numerator <= 0) numerator = 4;
-                if (denominator <= 0) denominator = 4;
-            }
+                        int numerator = 4, denominator = 4;
+                        juce::String ts = timeSigBox.getText();
+                        auto parts = juce::StringArray::fromTokens(ts, "/", "");
+                        if (parts.size() == 2)
+                        {
+                            numerator = parts[0].getIntValue();
+                            denominator = parts[1].getIntValue();
+                            if (numerator <= 0) numerator = 4;
+                            if (denominator <= 0) denominator = 4;
+                        }
 
-            juce::File tmp = buildBatchDrumMidi("BOOM_HatsBatch",
-                spec,
-                bars,
-                howMany,
-                restPct, dottedPct, tripletPct, swingPct,
-                /*seed*/ -1,
-                hatRowIndicesMask,
-                numerator,
-                denominator);
+                        for (int i = 0; i < howMany; ++i)
+                        {
+                            juce::String fileName = "BOOM_Hats_" + style + "_" + juce::String(i + 1) + ".mid";
+                            juce::File destFile = destFolder.getChildFile(fileName);
 
-            // Save it (this will open the synchronous save dialog you switched to earlier)
-            DBG("HatsWindow: tmp=" << tmp.getFullPathName() << " size=" << tmp.getSize());
-            saveWithChooserOrDesktop("BOOM_HatsBatch", tmp);
+                            juce::File tmp = buildBatchDrumMidi("BOOM_Hats_Temp",
+                                spec,
+                                bars,
+                                1,
+                                restPct, dottedPct, tripletPct, swingPct,
+                                i,
+                                hatRowIndicesMask,
+                                numerator,
+                                denominator);
+
+                            if (tmp.existsAsFile())
+                            {
+                                tmp.copyFileTo(destFile);
+                                DBG("HatsWindow: created " << destFile.getFullPathName());
+                            }
+                        }
+                    }
+                    delete fc;
+                });
         };
 
 
