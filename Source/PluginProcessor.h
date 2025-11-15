@@ -163,8 +163,7 @@ public:
 
     // Simple transforms
 // ---- Bumppit (Drums path + Melodic path) ----                                               // DRUMS ONLY
-    void bumppitTranspose(int targetKeyIndex, const juce::String& scaleName,  // 808/BASS ONLY
-        int octaveDelta /* e.g., -2..+2 */);
+    void bumppitTranspose(int targetKeyIndex, int octaveDelta);
     void flipMelodic(int densityPct, int addPct, int removePct);
     void flipDrums(int densityPct, int addPct, int removePct);
 

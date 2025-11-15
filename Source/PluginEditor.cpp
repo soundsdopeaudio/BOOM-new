@@ -1990,13 +1990,9 @@ BumppitWindow::BumppitWindow(BoomAudioProcessor& p,
     if (showMelodicOptions)
     {
         addAndMakeVisible(keyBox);    keyBox.addItemList(boom::keyChoices(), 1);     keyBox.setSelectedId(1);
-        addAndMakeVisible(scaleBox);  scaleBox.addItemList(boom::scaleChoices(), 1); scaleBox.setSelectedId(1);
         addAndMakeVisible(octaveBox); octaveBox.addItemList(juce::StringArray("-2", "-1", "0", "+1", "+2"), 1); octaveBox.setSelectedId(3);
-        addAndMakeVisible(barsBox);   barsBox.addItemList(juce::StringArray("1", "2", "4", "8"), 1);          barsBox.setSelectedId(3);
         keyBox.setTooltip("Choose to keep the same settings or pick new ones!");
-        scaleBox.setTooltip("Choose to keep the same settings or pick new ones!");
         octaveBox.setTooltip("Choose to keep the same settings or pick new ones!");
-        barsBox.setTooltip("Choose to keep the same settings or pick new ones!");
     }
 }
 
@@ -2033,9 +2029,7 @@ void BumppitWindow::resized()
     {
         // 808/Bass mockup (first image): four combo boxes centered column
         keyBox.setBounds(S(215, 130, 270, 46));
-        scaleBox.setBounds(S(215, 180, 270, 46));
-        octaveBox.setBounds(S(215, 230, 270, 46));
-        barsBox.setBounds(S(215, 280, 270, 46));
+        octaveBox.setBounds(S(215, 180, 270, 46));
 
         // place the Bumppit button beneath those controls (centered)
         btnBump.setBounds(S(175, 340, 350, 74));

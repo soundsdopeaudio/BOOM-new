@@ -330,7 +330,7 @@ private:
     juce::ImageButton btnHome;   // homeBtn*
 
     // Controls shown ONLY in 808/Bass layout
-    juce::ComboBox keyBox, scaleBox, octaveBox, barsBox;
+    juce::ComboBox keyBox, octaveBox;
     bool showMelodicOptions = false;
 };
 

@@ -1203,41 +1203,31 @@ void BoomAudioProcessor::transposeMelodic(int semitones, const juce::String& /*n
     notifyPatternChanged();
 }
 
-void BoomAudioProcessor::bumppitTranspose(int targetKeyIndex, const juce::String& scaleName, int octaveDelta)
+void BoomAudioProcessor::bumppitTranspose(int targetKeyIndex, int octaveDelta)
 {
     // Only act if 808 or Bass engine is selected
     auto eng = getEngineSafe();
-    // Melodic-only: proceed for any non-Drums engine (covers 808 and Bass without naming them)
     if (eng == boom::Engine::Drums)
         return;
 
-    // Guard inputs
-    targetKeyIndex = juce::jlimit(0, 11, targetKeyIndex);
-    octaveDelta = juce::jlimit(-4, 4, octaveDelta);
+    // Get the plugin's current key index from APVTS
+    int currentKeyIndex = 0;
+    if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter("key")))
+    {
+        currentKeyIndex = p->getIndex();
+    }
 
-    // Find scale intervals; default to Chromatic if unknown
-    const std::vector<int>* scale = nullptr;
-    auto it = kScales.find(scaleName.trim());
-    if (it != kScales.end()) scale = &it->second;
-    if (scale == nullptr)   scale = &kScales.at("Chromatic");
+    // Calculate the difference in semitones
+    int semitoneDifference = targetKeyIndex - currentKeyIndex;
 
-    // Transpose every melodic note to (root + scale), keep rhythm/length/velocity.
-    // We’ll do: (a) octave shift, (b) snap to target scale relative to chosen key.
+    // Calculate the total shift including octaves
+    int totalShift = semitoneDifference + (octaveDelta * 12);
+
+    // Apply the shift to every note in the melodic pattern
     auto mp = getMelodicPattern();
-
-    TickGuard guard;
-    guard.bucketSize = 8; // ~1/3 of a 16th; tight but prevents exact pile-ups
-
     for (auto& n : mp)
     {
-        // 1) octave
-        int pitch = n.pitch + (octaveDelta * 12);
-
-        // 2) snap to scale rooted at targetKeyIndex
-        pitch = snapToScale(pitch, targetKeyIndex, *scale);
-
-        // Keep safe MIDI range
-        n.pitch = juce::jlimit(0, 127, pitch);
+        n.pitch = juce::jlimit(0, 127, n.pitch + totalShift);
     }
 
     setMelodicPattern(mp);
@@ -2086,4 +2076,3 @@ void BoomAudioProcessor::aiSeekToSeconds(double sec) noexcept
     const int target = (int)juce::jlimit(0.0, getCaptureLengthSeconds(), sec) * (int)lastSampleRate;
     previewReadPos = juce::jlimit(0, captureLengthSamples, target);
 }
-
