@@ -437,9 +437,8 @@ juce::File buildBatchDrumMidi(const juce::String& baseName,
 juce::File writeAiCaptureToWav(BoomAudioProcessor& proc, const juce::String& baseName, BoomAudioProcessor::CaptureSource src)
 {
     // Use public accessors instead of touching private members.
-    const juce::AudioBuffer<float>& srcBuf = proc.getAiBuffer(src);
-    const int writeIndex = proc.getAiWriteIndex(src);
-    const int bufSize = proc.getAiBufferNumSamples(src);
+    const juce::AudioBuffer<float>& srcBuf = proc.getCaptureBuffer();
+    const int bufSize = proc.getCaptureLengthSamples();
 
     if (bufSize <= 0 || srcBuf.getNumSamples() <= 0)
         return {};
@@ -449,8 +448,6 @@ juce::File writeAiCaptureToWav(BoomAudioProcessor& proc, const juce::String& bas
     const int channels = juce::jmax(1, srcBuf.getNumChannels());
 
     int samples = bufSize;
-    if (writeIndex >= 0 && writeIndex <= bufSize)
-        samples = writeIndex;
 
     if (samples <= 0)
         return {};
