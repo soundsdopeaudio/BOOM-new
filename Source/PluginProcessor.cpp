@@ -3546,11 +3546,6 @@ int BoomAudioProcessor::getTimeSigDenominator() const noexcept
 // --- Timer tick: refresh the BPM label (and anything else lightweight) ---
 void BoomAudioProcessor::prepareToPlay(double sampleRate, int /*samplesPerBlock*/)
 {
-    ai_rh_buf_.setSize(1, 48000 * 30); // 30s mono at 48k; change if you want
-    ai_bx_buf_.setSize(1, 48000 * 30);
-    ai_rh_write_ = 0;
-    ai_bx_write_ = 0;
-    
     // Store the real sample rate for capture/transcription and size the ring buffer.
     lastSampleRate = (sampleRate > 0.0 ? sampleRate : 44100.0);
     ensureCaptureCapacitySeconds(65.0);
@@ -3609,30 +3604,6 @@ void BoomAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     ai_bx_inL_.store(lRms);
     ai_bx_inR_.store(rRms);
 
-    // record if armed (mono mix)
-    auto mixMono = [&](float l, float r) { return 0.5f * (l + r); };
-
-    if (ai_rh_rec_.load())
-    {
-        float* dst = ai_rh_buf_.getWritePointer(0);
-        const int N = ai_rh_buf_.getNumSamples();
-        for (int i = 0; i < numSamples; ++i)
-        {
-            dst[ai_rh_write_] = mixMono(inL[i], inR[i]);
-            ai_rh_write_ = (ai_rh_write_ + 1) % N;
-        }
-    }
-
-    if (ai_bx_rec_.load())
-    {
-        float* dst = ai_bx_buf_.getWritePointer(0);
-        const int N = ai_bx_buf_.getNumSamples();
-        for (int i = 0; i < numSamples; ++i)
-        {
-            dst[ai_bx_write_] = mixMono(inL[i], inR[i]);
-            ai_bx_write_ = (ai_bx_write_ + 1) % N;
-        }
-    }
 }
 
 void BoomAudioProcessor::releaseResources()
@@ -3790,11 +3761,9 @@ void BoomAudioProcessor::aiStartCapture(CaptureSource src)
 // aiStartCapture(...)
 // Mark as capturing (keep both flag families in sync)
     if (src == CaptureSource::Loopback) {
-        ai_rh_rec_.store(true);
         recRh_.store(true);
     }
     else {
-        ai_bx_rec_.store(true);
         recBx_.store(true);
     }
 
@@ -3806,30 +3775,14 @@ void BoomAudioProcessor::aiStopCapture(CaptureSource src)
 {
     // aiStopCapture(...)
     if (src == CaptureSource::Loopback) {
-        ai_rh_rec_.store(false);
         recRh_.store(false);
     }
     else {
-        ai_bx_rec_.store(false);
         recBx_.store(false);
     }
 
 }
 
-const juce::AudioBuffer<float>& BoomAudioProcessor::getAiBuffer(CaptureSource src) const noexcept
-{
-    return (src == CaptureSource::Loopback) ? ai_rh_buf_ : ai_bx_buf_;
-}
-
-int BoomAudioProcessor::getAiWriteIndex(CaptureSource src) const noexcept
-{
-    return (src == CaptureSource::Loopback) ? ai_rh_write_ : ai_bx_write_;
-}
-
-int BoomAudioProcessor::getAiBufferNumSamples(CaptureSource src) const noexcept
-{
-    return (src == CaptureSource::Loopback) ? ai_rh_buf_.getNumSamples() : ai_bx_buf_.getNumSamples();
-}
 
 // === Simple façade methods used by AIToolsWindow ===
 void BoomAudioProcessor::ai_beginRhRecord()
@@ -3842,7 +3795,7 @@ void BoomAudioProcessor::ai_endRhRecord()
 }
 bool BoomAudioProcessor::ai_isRhRecording() const noexcept
 {
-    return ai_rh_rec_.load();
+    return recRh_.load();
 }
 
 void BoomAudioProcessor::ai_beginBxRecord()
@@ -3855,7 +3808,7 @@ void BoomAudioProcessor::ai_endBxRecord()
 }
 bool BoomAudioProcessor::ai_isBxRecording() const noexcept
 {
-    return ai_bx_rec_.load();
+    return recBx_.load();
 }
 
 

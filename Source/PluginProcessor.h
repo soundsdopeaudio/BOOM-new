@@ -55,9 +55,7 @@ public:
 
     // --- AI debug / editor accessors (safe const accessors for editor)
     // --- AI editor accessors (safe const accessors for editor) ----------
-    const juce::AudioBuffer<float>& getAiBuffer(CaptureSource src) const noexcept;
-    int getAiWriteIndex(CaptureSource src) const noexcept;
-    int getAiBufferNumSamples(CaptureSource src) const noexcept;
+    const juce::AudioBuffer<float>& getCaptureBuffer() const noexcept { return captureBuffer; }
 
     std::pair<int, int> getMelodicPitchBounds() const;
 
@@ -211,7 +209,7 @@ public:
     void ensureCaptureCapacitySeconds(double seconds);
     void aiStartCapture(CaptureSource src);
     void aiStopCapture(CaptureSource src);
-    bool aiIsCapturing() const noexcept { return ai_rh_rec_.load() || ai_bx_rec_.load(); }
+    bool aiIsCapturing() const noexcept { return recRh_.load() || recBx_.load(); }
     bool aiHasCapture() const noexcept { return captureLengthSamples > 0; }
 
     float getRhythmimickRMSL() const noexcept { return rmsRhL_; }
@@ -264,15 +262,6 @@ private:
     std::atomic<float> rmsInputL { 0.0f }, rmsInputR{ 0.0f };
     std::atomic<int>   capturePlayheadSamples { 0 }; // advanced when recording
 
-    // Recording flags (atomic so UI can poll safely)
-    std::atomic<bool> ai_rh_rec_{ false };
-    std::atomic<bool> ai_bx_rec_{ false };
-
-    // Simple ring buffers for capture (mono mix)
-    juce::AudioBuffer<float> ai_rh_buf_;
-    juce::AudioBuffer<float> ai_bx_buf_;
-    int ai_rh_write_ = 0;
-    int ai_bx_write_ = 0;
 
     // Levels (atomics written from processBlock, read by UI)
     std::atomic<float> ai_rh_inL_{ 0.0f }, ai_rh_inR_{ 0.0f };
