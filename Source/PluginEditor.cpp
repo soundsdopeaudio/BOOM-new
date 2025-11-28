@@ -3741,13 +3741,36 @@ void HatsWindow::resized()
     barsLbl.setBounds(x, rowTop + 20, colW, 26);
     barsBox.setBounds(x, boxTop + 20, colW, 26);
 
-    // “How many?” row centered under the three selectors
-    howManyLbl.setBounds((W - 220) / 2, boxTop + 82, 220, 32);
-    howManyBox.setBounds((W - 90) / 2, howManyLbl.getBottom() + 28, 90, 26);
-    tunedLbl.setBounds((W - 500) / 2, boxTop + 82, colW, 26);
-    tunedChk.setBounds((W - 350) / 2, boxTop + 120, 28, 28);
-    keyBox.setBounds((W - 250) / 2, boxTop + 110, colW, 26);
-    scaleBox.setBounds((W - 225) / 2, boxTop + 110, colW, 26);
+    // Centered horizontal layout for "How Many" and "Tuned" controls
+    const int howManyGroupWidth = 150;
+    const int tunedGroupWidth = 150;
+    const int groupSpacing = 30;
+    const int totalCenteredWidth = howManyGroupWidth + groupSpacing + tunedGroupWidth;
+
+    int currentX = (W - totalCenteredWidth) / 2;
+    int yPos = boxTop + 60;
+
+    // How Many group
+    howManyLbl.setBounds(currentX, yPos, 150, 26);
+    howManyBox.setBounds(currentX + (150 - 90) / 2, yPos + 26 + 5, 90, 26);
+
+    currentX += howManyGroupWidth + groupSpacing;
+
+    // Tuned group
+    tunedLbl.setBounds(currentX, yPos, 150, 26);
+    tunedChk.setBounds(currentX + (150 - 28) / 2, yPos + 26 + 5, 28, 28);
+
+    int controlsBottomY = juce::jmax(howManyBox.getBottom(), tunedChk.getBottom());
+
+    // Place key and scale boxes below the "Tuned" group when visible
+    if (tunedChk.getToggleState())
+    {
+        const int keyScaleY = tunedChk.getBottom() + 10;
+        const int keyScaleX = tunedChk.getX() + (tunedChk.getWidth() - 150) / 2;
+        keyBox.setBounds(keyScaleX, keyScaleY, 150, 26);
+        scaleBox.setBounds(keyScaleX, keyScaleY + 26 + 5, 150, 26);
+        controlsBottomY = scaleBox.getBottom();
+    }
 
     // Triplets / Dotted on right side (like mock)
     const int rightX = W - 240;
@@ -3759,7 +3782,7 @@ void HatsWindow::resized()
     dottedDensity.setBounds(568, 110, 100, 20);
 
     // Save + Home
-    btnGenerate.setBounds((W - 150) / 2, howManyBox.getBottom() + 40, 150, 40);
+    btnGenerate.setBounds((W - 150) / 2, controlsBottomY + 30, 150, 40);
     btnDragMidi.setBounds((W - 150) / 2, H - 100, 150, 50);
     btnHome.setBounds(W - 84 - 18, H - 84 + 2, 84, 84);
 }
@@ -4036,34 +4059,60 @@ void RollsWindow::resized()
     rollsTitleImg.setBounds((W - titleImageWidth) / 2, 15, titleImageWidth, titleImageHeight);
 
     // 2. Combo boxes and labels
-    // Order: Time Sig, Bars, Style
     const int itemWidth = 150;
     const int labelHeight = 26;
     const int comboBoxHeight = 24;
     const int horizontalSpacing = 20;
-    const int verticalSpacing = 5;
 
+    int yPos = titleImageHeight + 40;
+
+    // Centered horizontal layout for Time Sig, Bars, and Style
     const int numItems = 3;
     const int totalLayoutWidth = (numItems * itemWidth) + ((numItems - 1) * horizontalSpacing);
-
     int currentX = (W - totalLayoutWidth) / 2;
-    int labelY = titleImageHeight + 100;
-    int boxY = labelY + labelHeight + verticalSpacing;
 
-    // Time Sig
-    auto area = getLocalBounds().reduced(12);
-    const int topPad = 150;
-    area.removeFromTop(topPad);
-    auto row = area.removeFromTop(32);
-    timeSigLbl.setBounds(row.removeFromLeft(100));
-    timeSigBox.setBounds(row.removeFromLeft(120));
+    timeSigLbl.setBounds(currentX, yPos, itemWidth, labelHeight);
+    timeSigBox.setBounds(currentX, yPos + labelHeight + 5, itemWidth, comboBoxHeight);
     currentX += itemWidth + horizontalSpacing;
-    styleLbl.setBounds(row.removeFromLeft(120));
-    styleBox.setBounds(row.removeFromLeft(160));
-    howManyLbl.setBounds(currentX, labelY, itemWidth, labelHeight);
-    howManyBox.setBounds(currentX, boxY, itemWidth, comboBoxHeight);
-    barsLbl.setBounds(row.removeFromLeft(80));
-    barsBox.setBounds(row.removeFromLeft(80));
+
+    barsLbl.setBounds(currentX, yPos, itemWidth, labelHeight);
+    barsBox.setBounds(currentX, yPos + labelHeight + 5, itemWidth, comboBoxHeight);
+    currentX += itemWidth + horizontalSpacing;
+
+    styleLbl.setBounds(currentX, yPos, itemWidth, labelHeight);
+    styleBox.setBounds(currentX, yPos + labelHeight + 5, itemWidth, comboBoxHeight);
+
+    yPos = styleBox.getBottom() + 20;
+
+    // Centered horizontal layout for "How Many" and "Tuned" controls
+    const int howManyGroupWidth = 150;
+    const int tunedGroupWidth = 150;
+    const int groupSpacing = 30;
+    const int totalCenteredWidth = howManyGroupWidth + groupSpacing + tunedGroupWidth;
+
+    currentX = (W - totalCenteredWidth) / 2;
+
+    // How Many group
+    howManyLbl.setBounds(currentX, yPos, 150, 26);
+    howManyBox.setBounds(currentX + (150 - 90) / 2, yPos + 26 + 5, 90, 26);
+
+    currentX += howManyGroupWidth + groupSpacing;
+
+    // Tuned group
+    tunedLbl.setBounds(currentX, yPos, 150, 26);
+    tunedChk.setBounds(currentX + (150 - 28) / 2, yPos + 26 + 5, 28, 28);
+
+    int controlsBottomY = juce::jmax(howManyBox.getBottom(), tunedChk.getBottom());
+
+    if (tunedChk.getToggleState())
+    {
+        const int keyScaleY = tunedChk.getBottom() + 10;
+        const int keyScaleX = tunedChk.getX() + (tunedChk.getWidth() - 150) / 2;
+        keyBox.setBounds(keyScaleX, keyScaleY, 150, 26);
+        scaleBox.setBounds(keyScaleX, keyScaleY + 26 + 5, 150, 26);
+        controlsBottomY = scaleBox.getBottom();
+    }
+
     const int rowTop = 110; // top Y of label row
     const int rightX = W - 240;
     tripletsLblImg.setBounds(rightX + 50, rowTop - 70, 160, 24);
@@ -4075,14 +4124,8 @@ void RollsWindow::resized()
 
     // 3. Buttons row
     const int generateButtonWidth = 190;
-    const int otherButtonWidth = 150;
     const int buttonHeight = 50;
-    const int buttonSpacing = 20;
-    const int totalButtonWidth = generateButtonWidth + otherButtonWidth * 2 + buttonSpacing * 2;
-    int x_buttons = (W - totalButtonWidth) / 2;
-    int y_buttons = boxY + comboBoxHeight + 30; // 30px space after combos
-    btnGenerate.setBounds(currentX - 25, y_buttons, generateButtonWidth, buttonHeight);
-    x_buttons += generateButtonWidth + buttonSpacing;
+    btnGenerate.setBounds((W - generateButtonWidth) / 2, controlsBottomY + 20, generateButtonWidth, buttonHeight);
     btnHome.setBounds(W - 80, H - 80, 60, 60);
 }
 
