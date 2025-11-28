@@ -3496,13 +3496,20 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
     barsLbl.setImage(loadSkin("barsLbl.png"));
     howManyLbl.setImage(loadSkin("howManyLbl.png")); howManyLbl.setInterceptsMouseClicks(false, false);
     addAndMakeVisible(howManyLbl);
-    addAndMakeVisible(keyBox);
-    addAndMakeVisible(scaleBox);
+
+    keyLbl.setImage(loadSkin("keyLbl.png"));
+    scaleLbl.setImage(loadSkin("scaleLbl.png"));
+    addAndMakeVisible(keyLbl);
+    addAndMakeVisible(scaleLbl);
+    keyLbl.setVisible(false);
+    scaleLbl.setVisible(false);
+
     addAndMakeVisible(keyBox);   keyBox.addItemList(boom::keyChoices(), 1);
     addAndMakeVisible(scaleBox); scaleBox.addItemList(boom::scaleChoices(), 1);
     keyBox.setVisible(false);
     scaleBox.setVisible(false);
-    tunedLbl.setImage(loadSkin("tunedLbl.png")); howManyLbl.setInterceptsMouseClicks(false, false);
+
+    tunedLbl.setImage(loadSkin("tunedLbl.png"));
     addAndMakeVisible(tunedChk);
     boomui::setToggleImages(tunedChk, "checkboxOffBtn", "checkboxOnBtn");
     tunedChk.setClickingTogglesState(true);
@@ -3511,6 +3518,8 @@ HatsWindow::HatsWindow(BoomAudioProcessor& p,
             const bool enabled = tunedChk.getToggleState();
             keyBox.setVisible(enabled);
             scaleBox.setVisible(enabled);
+            keyLbl.setVisible(enabled);
+            scaleLbl.setVisible(enabled);
             resized(); // re-layout the UI
         };
     keyBox.setVisible(tunedChk.getToggleState());
@@ -3765,10 +3774,17 @@ void HatsWindow::resized()
     // Place key and scale boxes below the "Tuned" group when visible
     if (tunedChk.getToggleState())
     {
+        const int labelsWidth = 100;
+        const int boxWidth = 150;
+        const int spacing = 5;
+        const int totalWidth = labelsWidth + spacing + boxWidth;
         const int keyScaleY = tunedChk.getBottom() + 10;
-        const int keyScaleX = tunedChk.getX() + (tunedChk.getWidth() - 150) / 2;
-        keyBox.setBounds(keyScaleX, keyScaleY, 150, 26);
-        scaleBox.setBounds(keyScaleX, keyScaleY + 26 + 5, 150, 26);
+        const int startX = tunedChk.getX() - (totalWidth - tunedChk.getWidth())/2;
+
+        keyLbl.setBounds(startX, keyScaleY, labelsWidth, 26);
+        keyBox.setBounds(startX + labelsWidth + spacing, keyScaleY, boxWidth, 26);
+        scaleLbl.setBounds(startX, keyScaleY + 26 + 5, labelsWidth, 26);
+        scaleBox.setBounds(startX + labelsWidth + spacing, keyScaleY + 26 + 5, boxWidth, 26);
         controlsBottomY = scaleBox.getBottom();
     }
 
@@ -3834,13 +3850,20 @@ RollsWindow::RollsWindow(BoomAudioProcessor& p, std::function<void()> onClose, s
     styleBox.setSelectedId(1, juce::dontSendNotification);
     howManyLbl.setImage(loadSkin("howManyLbl.png"));
     addAndMakeVisible(howManyLbl);
-    addAndMakeVisible(keyBox);
-    addAndMakeVisible(scaleBox);
+
+    keyLbl.setImage(loadSkin("keyLbl.png"));
+    scaleLbl.setImage(loadSkin("scaleLbl.png"));
+    addAndMakeVisible(keyLbl);
+    addAndMakeVisible(scaleLbl);
+    keyLbl.setVisible(false);
+    scaleLbl.setVisible(false);
+
     addAndMakeVisible(keyBox);   keyBox.addItemList(boom::keyChoices(), 1);
     addAndMakeVisible(scaleBox); scaleBox.addItemList(boom::scaleChoices(), 1);
     keyBox.setVisible(false);
     scaleBox.setVisible(false);
-    tunedLbl.setImage(loadSkin("tunedLbl.png")); howManyLbl.setInterceptsMouseClicks(false, false);
+
+    tunedLbl.setImage(loadSkin("tunedLbl.png"));
     addAndMakeVisible(tunedLbl);
     addAndMakeVisible(tunedChk);
     boomui::setToggleImages(tunedChk, "checkboxOffBtn", "checkboxOnBtn");
@@ -3850,8 +3873,8 @@ RollsWindow::RollsWindow(BoomAudioProcessor& p, std::function<void()> onClose, s
             const bool enabled = tunedChk.getToggleState();
             keyBox.setVisible(enabled);
             scaleBox.setVisible(enabled);
-            addAndMakeVisible(keyBox);
-            addAndMakeVisible(scaleBox);
+            keyLbl.setVisible(enabled);
+            scaleLbl.setVisible(enabled);
             resized(); // re-layout the UI
         };
     keyBox.setVisible(tunedChk.getToggleState());
@@ -4106,10 +4129,17 @@ void RollsWindow::resized()
 
     if (tunedChk.getToggleState())
     {
+        const int labelsWidth = 100;
+        const int boxWidth = 150;
+        const int spacing = 5;
+        const int totalWidth = labelsWidth + spacing + boxWidth;
         const int keyScaleY = tunedChk.getBottom() + 10;
-        const int keyScaleX = tunedChk.getX() + (tunedChk.getWidth() - 150) / 2;
-        keyBox.setBounds(keyScaleX, keyScaleY, 150, 26);
-        scaleBox.setBounds(keyScaleX, keyScaleY + 26 + 5, 150, 26);
+        const int startX = tunedChk.getX() - (totalWidth - tunedChk.getWidth())/2;
+
+        keyLbl.setBounds(startX, keyScaleY, labelsWidth, 26);
+        keyBox.setBounds(startX + labelsWidth + spacing, keyScaleY, boxWidth, 26);
+        scaleLbl.setBounds(startX, keyScaleY + 26 + 5, labelsWidth, 26);
+        scaleBox.setBounds(startX + labelsWidth + spacing, keyScaleY + 26 + 5, boxWidth, 26);
         controlsBottomY = scaleBox.getBottom();
     }
 

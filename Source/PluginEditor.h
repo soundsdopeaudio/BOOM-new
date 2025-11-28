@@ -351,7 +351,7 @@ private:
     juce::ImageComponent barsLbl;
     juce::ImageComponent styleLbl;
     juce::ImageComponent timeSigLbl;
-	juce::ImageComponent howManyLbl, tripletsLblImg, dottedLblImg;  
+	juce::ImageComponent howManyLbl, tripletsLblImg, dottedLblImg, keyLbl, scaleLbl;
     juce::ImageComponent tunedLbl;
     juce::ComboBox styleBox, barsBox, timeSigBox, howManyBox, keyBox, scaleBox;
     juce::ImageButton    tripletsChk, dottedChk, tunedChk;
@@ -380,7 +380,7 @@ public:
 
     std::unique_ptr<juce::TooltipWindow> tooltipWindow;
     juce::ImageButton    tripletsChk, dottedChk, tunedChk;
-    juce::ImageComponent tunedLbl;
+    juce::ImageComponent tunedLbl, keyLbl, scaleLbl;
     juce::ComboBox keyBox, scaleBox;
     bool tripletsOn_ = false;
     bool dottedOn_ = false;
