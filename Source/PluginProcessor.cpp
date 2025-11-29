@@ -3811,8 +3811,7 @@ bool BoomAudioProcessor::aiIsCapturing() const noexcept
     // Single clear point for "am I capturing" — easier to debug and consistent memory ordering.
     const bool rh = recRh_.load(std::memory_order_acquire);
     const bool bx = recBx_.load(std::memory_order_acquire);
-    const bool pv = isPreviewing.load(std::memory_order_acquire);
-    return rh || bx || pv;
+    return rh || bx;
 }
 
 // Add these definitions (near the other AI façade methods)
@@ -3850,11 +3849,10 @@ void BoomAudioProcessor::appendCaptureFrom(const juce::AudioBuffer<float>& in)
 
     const bool recRh = recRh_.load(std::memory_order_acquire);
     const bool recBx = recBx_.load(std::memory_order_acquire);
-    const bool preview = isPreviewing.load(std::memory_order_acquire);
-    if (!recRh && !recBx && !preview)
+    if (!recRh && !recBx)
     {
         DBG(juce::String("appendCaptureFrom: skipping write because not capturing (recRh=") + juce::String((int)recRh)
-            + " recBx=" + juce::String((int)recBx) + " preview=" + juce::String((preview ? 1 : 0)) + ")");
+            + " recBx=" + juce::String((int)recBx) + ")");
         return;
     }
 
@@ -4101,8 +4099,9 @@ void BoomAudioProcessor::aiPreviewStart()
 {
     DBG("Processor: aiPreviewStart() called. captureLengthSamples=" << captureLengthSamples);
     if (captureLengthSamples <= 0) { DBG("Processor: no capture to preview, returning"); return; }
-    isPreviewing.store(true);
     previewReadPos.store(0);
+    isPreviewing.store(true);
+    std::atomic_thread_fence(std::memory_order_release);
     DBG("Processor: preview started");
 }
 
@@ -4110,6 +4109,7 @@ void BoomAudioProcessor::aiPreviewStop()
 {
     DBG("Processor: aiPreviewStop() called");
     isPreviewing.store(false);
+    std::atomic_thread_fence(std::memory_order_release);
     DBG("Processor: preview stopped");
 }
 
