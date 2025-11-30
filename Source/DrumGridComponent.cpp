@@ -28,30 +28,19 @@ uint32_t DrumGridComponent::getRowSelectionMask() const noexcept
 {
     uint32_t mask = 0u;
 
-    // Defensive: if no cells, return 0 (means "no filter" / include all)
-    if (cells.empty())
+    // If no rows are selected, the behaviour is to include all rows, so we return 0.
+    if (selectedRows_.isEmpty())
         return 0u;
 
-    // For each row, mark it if any cell in that row is non-zero/active.
-    // This assumes `cells` is a vector-like container where each row is indexable and
-    // non-zero value == active/hit. This matches how the grid draws/uses `cells` elsewhere.
-    const size_t maxRows = juce::jmin((size_t)32, cells.size()); // limit to 32 rows for mask safety
-    for (size_t r = 0; r < maxRows; ++r)
+    // For each selected row, add it to the bitmask.
+    for (int row : selectedRows_)
     {
-        bool anyActive = false;
-
-        // row might be something like std::vector<int> or std::vector<uint8_t>
-        // we iterate generically with range-for
-        for (const auto& v : cells[r])
+        if (row >= 0 && row < 32) // Basic range check for a 32-bit mask
         {
-            if (v != 0) { anyActive = true; break; }
+            mask |= (1u << row);
         }
-
-        if (anyActive)
-            mask |= (1u << (unsigned)r);
     }
 
-    // If mask==0 here you can interpret it as "no rows chosen" (calling code may treat 0 as "include all").
     return mask;
 }
 
