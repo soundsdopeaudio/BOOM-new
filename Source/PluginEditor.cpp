@@ -836,6 +836,7 @@ BoomAudioProcessorEditor::BoomAudioProcessorEditor(BoomAudioProcessor& p)
 
 
     // GHXSTGRID controls
+    ghxstGridLbl.setImage(loadSkin("ghxstgridLbl.png")); addAndMakeVisible(ghxstGridLbl);
     addAndMakeVisible(ghxstToggle);
     setToggleImages(ghxstToggle, "checkBoxOffBtn", "checkBoxOnBtn"); // reuse same skins
     addAndMakeVisible(ghxstIntensity);
@@ -845,11 +846,11 @@ BoomAudioProcessorEditor::BoomAudioProcessorEditor(BoomAudioProcessor& p)
     boomui::makePercentSlider(ghxstIntensity); // keep styling consistent with other percent sliders
 
     // BounceSync UI
+    bounceSyncLblImg.setImage(loadSkin("bounceSyncLbl.png")); addAndMakeVisible(bounceSyncLblImg);
     addAndMakeVisible(bounceSyncToggle);
     setToggleImages(bounceSyncToggle, "checkboxOffBtn", "checkboxOnBtn"); // existing art
     bounceSyncToggle.setTooltip("BounceSync — apply per-row syncopated timing offsets");
 
-    bounceSyncLblImg.setImage(boomui::loadSkin("bounceSyncLbl.png"));
     addAndMakeVisible(bounceSyncStrength);
     bounceSyncStrength.addItemList(juce::StringArray{ "Light", "Medium", "Hard" }, 1);
     bounceSyncStrength.setJustificationType(juce::Justification::centredLeft);
@@ -858,9 +859,21 @@ BoomAudioProcessorEditor::BoomAudioProcessorEditor(BoomAudioProcessor& p)
 
 
 
+    // ----------------- NegSpace UI creation -----------------
+    addAndMakeVisible(negSpaceLblImg);
+    negSpaceLblImg.setImage(boomui::loadSkin("negSpaceLbl.png"));
+    addAndMakeVisible(negSpaceToggle);
+    setToggleImages(negSpaceToggle, "checkBoxOffBtn", "checkBoxOnBtn");
+    addAndMakeVisible(negSpaceGapSlider);
+    negSpaceGapSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    negSpaceGapSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    boomui::makePercentSlider(negSpaceGapSlider);
+
     // ----------------- TripFlip UI creation -----------------
     addAndMakeVisible(tripFlipLblImg);
     tripFlipLblImg.setImage(boomui::loadSkin("tripFlipLbl.png"));
+    addAndMakeVisible(tripFlipToggle);
+    setToggleImages(tripFlipToggle, "checkBoxOffBtn", "checkBoxOnBtn");
     addAndMakeVisible(tripFlipModeBox);
     tripFlipModeBox.addItemList(juce::StringArray{ "Off", "Light", "Normal", "Aggressive" }, 1);
     addAndMakeVisible(tripFlipDensity);
@@ -869,22 +882,15 @@ BoomAudioProcessorEditor::BoomAudioProcessorEditor(BoomAudioProcessor& p)
     boomui::makePercentSlider(tripFlipDensity);
 
     // ----------------- PolyGod UI creation -----------------
-    addAndMakeVisible(polyGodLblImg);
-    polyGodLblImg.setImage(boomui::loadSkin("polyGodLbl.png"));
-    addAndMakeVisible(polyGodToggle); setToggleImages(polyGodToggle, "checkBoxOffBtn", "checkBoxOnBtn");
+    polyGodLblImg.setImage(loadSkin("polyGodLbl.png")); addAndMakeVisible(polyGodLblImg);
+    addAndMakeVisible(polyGodToggle);
+    setToggleImages(polyGodToggle, "checkBoxOffBtn", "checkBoxOnBtn");
     addAndMakeVisible(polyGodRatioBox);
     polyGodRatioBox.addItemList(juce::StringArray{ "3:4", "5:4", "7:4", "3:2", "5:3" }, 1);
 
     // ----------------- Scatter UI creation -----------------
-    addAndMakeVisible(scatterLblImg);
-    scatterLblImg.setImage(boomui::loadSkin("scatterLbl.png"));
-    addAndMakeVisible(scatterBtn); setButtonImages(scatterBtn, "scatterBtn"); // expects scatterBtn, scatterBtn_hover, scatterBtn_down resources
-    addAndMakeVisible(scatterDepthSlider);
-    scatterDepthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    scatterDepthSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    boomui::makePercentSlider(scatterDepthSlider);
-    addAndMakeVisible(scatterDensityBox);
-    scatterDensityBox.addItemList(juce::StringArray{ "Mild", "Normal", "Spicy" }, 1);
+    addAndMakeVisible(scatterBtn);
+    setButtonImages(scatterBtn, "scatterBtn");
 
 
 
@@ -936,15 +942,14 @@ BoomAudioProcessorEditor::BoomAudioProcessorEditor(BoomAudioProcessor& p)
     safeCreateButton("mode_NegSpace", negSpaceToggleAtt, negSpaceToggle);
     safeCreateSlider("negspace_gapPct", negSpaceGapAtt, negSpaceGapSlider);
 
-    safeCreateCombo("mode_TripFlip", tripFlipModeAtt, tripFlipModeBox);
+    safeCreateButton("mode_TripFlip", tripFlipToggleAtt, tripFlipToggle);
+    safeCreateCombo("tripFlip_mode", tripFlipModeAtt, tripFlipModeBox);
     safeCreateSlider("tripflip_density", tripFlipDensityAtt, tripFlipDensity);
 
     safeCreateButton("mode_PolyGod", polyGodToggleAtt, polyGodToggle);
     safeCreateCombo("polygod_ratio", polyGodRatioAtt, polyGodRatioBox);
 
     safeCreateButton("mode_Scatter", scatterToggleAtt, scatterBtn); // treat scatterBtn as a toggle button (visually)
-    safeCreateSlider("scatter_depth", scatterDepthAtt, scatterDepthSlider);
-    safeCreateCombo("scatter_density", scatterDensityAtt, scatterDensityBox);
 
     // Replace your current setApvtsBool with this robust version
     auto setApvtsBool = [this](const char* paramId, bool v)
@@ -1145,12 +1150,11 @@ BoomAudioProcessorEditor::BoomAudioProcessorEditor(BoomAudioProcessor& p)
     proc.apvts.addParameterListener("mode_NegSpace", this);
     proc.apvts.addParameterListener("negspace_gapPct", this);
     proc.apvts.addParameterListener("mode_TripFlip", this);
+    proc.apvts.addParameterListener("tripFlip_mode", this);
     proc.apvts.addParameterListener("tripflip_density", this);
     proc.apvts.addParameterListener("mode_PolyGod", this);
     proc.apvts.addParameterListener("polygod_ratio", this);
     proc.apvts.addParameterListener("mode_Scatter", this);
-    proc.apvts.addParameterListener("scatter_depth", this);
-    proc.apvts.addParameterListener("scatter_density", this);
 
     DBG("APVTS useTriplets=" << proc.apvts.getRawParameterValue("useTriplets")->load()
         << " tripletDensity=" << proc.apvts.getRawParameterValue("tripletDensity")->load()
@@ -1802,8 +1806,15 @@ void BoomAudioProcessorEditor::parameterChanged(const juce::String& parameterID,
             }
             else if (parameterID == "mode_TripFlip")
             {
+                const bool v = proc.apvts.getRawParameterValue("mode_TripFlip")->load() > 0.5f;
+                tripFlipToggle.setToggleState(v, juce::dontSendNotification);
+                tripFlipModeBox.setEnabled(v);
+                tripFlipDensity.setEnabled(v);
+            }
+            else if (parameterID == "tripFlip_mode")
+            {
                 // APVTS stored as choice index. Convert to ComboBox id.
-                const int idx = juce::jmax(0, (int)juce::roundToInt(proc.apvts.getRawParameterValue("mode_TripFlip")->load()));
+                const int idx = juce::jmax(0, (int)juce::roundToInt(proc.apvts.getRawParameterValue("tripFlip_mode")->load()));
                 tripFlipModeBox.setSelectedId(idx + 1, juce::dontSendNotification);
                 tripFlipDensity.setEnabled(idx > 0);
             }
@@ -1826,15 +1837,6 @@ void BoomAudioProcessorEditor::parameterChanged(const juce::String& parameterID,
             {
                 const bool v = proc.apvts.getRawParameterValue("mode_Scatter")->load() > 0.5f;
                 scatterBtn.setToggleState(v, juce::dontSendNotification);
-            }
-            else if (parameterID == "scatter_depth")
-            {
-                // bound
-            }
-            else if (parameterID == "scatter_density")
-            {
-                const int idx = juce::jmax(0, (int)juce::roundToInt(proc.apvts.getRawParameterValue("scatter_density")->load()));
-                scatterDensityBox.setSelectedId(idx + 1, juce::dontSendNotification);
             }
         });
 }
@@ -1881,36 +1883,36 @@ void BoomAudioProcessorEditor::resized()
     dottedDensity.setBounds(S(568, 65, 100, 20));
     useDotted.setBounds(S(685, 50, 20, 20));
 
-    // GHXSTGRID label + toggle + slider (placed under dotted controls)
-	ghxstGridLbl.setBounds(S(560, 88, 140, 22));  // you'll need an image or reuse an existing label image; if you don't have an image, skip the label and use tooltip
-    ghxstToggle.setBounds(S(700, 88, 20, 20));      // if you used ghxstToggle, replace useGhxst with ghxstToggle
-    ghxstIntensity.setBounds(S(568, 110, 100, 20));
-    // Put BounceSync just under the swing/triplet/dotted block
-    bounceSyncToggle.setBounds(S(680, 88, 20, 20));
-    bounceSyncStrength.setBounds(S(580, 88, 90, 20)); // smaller combo
+    // --- NEW tool placements ---
 
-    // Example coordinates — adjust to match your column layout
+    // ghxstgrid (beneath 808 button)
+    ghxstGridLbl.setBounds(S(240, 110, 80, 20));
+    ghxstToggle.setBounds(S(320, 110, 20, 20));
+    ghxstIntensity.setBounds(S(240, 135, 100, 20));
 
-// NegSpace (below dotted controls)
-    negSpaceLblImg.setBounds(560, 140, 140, 22);
-    negSpaceToggle.setBounds(700, 140, 22, 22);
-    negSpaceGapSlider.setBounds(568, 164, 100, 20);
+    // bouncesync (beneath drums button)
+    bounceSyncLblImg.setBounds(S(460, 110, 80, 20));
+    bounceSyncToggle.setBounds(S(540, 110, 20, 20));
+    bounceSyncStrength.setBounds(S(460, 135, 100, 20));
 
-    // TripFlip (just below NegSpace)
-    tripFlipLblImg.setBounds(560, 190, 140, 22);
-    tripFlipModeBox.setBounds(568, 214, 90, 20);
-    tripFlipDensity.setBounds(666, 214, 100, 20);
+    // negspace (between rolls and AI tools)
+    negSpaceLblImg.setBounds(S(190, 370, 80, 20));
+    negSpaceToggle.setBounds(S(270, 370, 20, 20));
+    negSpaceGapSlider.setBounds(S(190, 395, 100, 20));
 
-    // PolyGod (left column, near swing)
-    polyGodLblImg.setBounds(560, 250, 140, 22);
-    polyGodToggle.setBounds(700, 250, 22, 22);
-    polyGodRatioBox.setBounds(568, 274, 90, 20);
+    // polygod (above AI tools)
+    polyGodLblImg.setBounds(S(290, 320, 80, 20));
+    polyGodToggle.setBounds(S(370, 320, 20, 20));
+    polyGodRatioBox.setBounds(S(390, 320, 100, 20));
 
-    // Scatter (right-side action area or wherever you put other modal buttons)
-    scatterLblImg.setBounds(50, H - 160, 120, 20); // example: place near bottom-left
-    scatterBtn.setBounds(50, H - 130, 48, 48);
-    scatterDepthSlider.setBounds(108, H - 126, 120, 20);
-    scatterDensityBox.setBounds(236, H - 126, 80, 20);
+    // tripflip (between polygod and bumppit)
+    tripFlipLblImg.setBounds(S(580, 250, 80, 20));
+    tripFlipToggle.setBounds(S(660, 250, 20, 20));
+    tripFlipModeBox.setBounds(S(680, 250, 100, 20));
+    tripFlipDensity.setBounds(S(580, 275, 100, 20));
+
+    // scatterBtn (below tripflip slider)
+    scatterBtn.setBounds(S(580, 300, 180, 45));
 
 
     soundsDopeLbl.setBounds(S(15, 15, 100, 49));

@@ -178,10 +178,12 @@ public:
 
     // ---- TripFlip UI ----
     juce::ImageComponent tripFlipLblImg;   // loadSkin("tripFlipLbl.png")
+    juce::ImageButton    tripFlipToggle;
     juce::ComboBox       tripFlipModeBox;  // Off/Light/Normal/Aggressive
     juce::Slider         tripFlipDensity;
 
     // Attachments
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>    tripFlipToggleAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> tripFlipModeAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>    tripFlipDensityAtt;
 
@@ -195,15 +197,10 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> polyGodRatioAtt;
 
     // ---- Scatter UI (opens Scatter Window) ----
-    juce::ImageComponent scatterLblImg;    // loadSkin("scatterLbl.png")
     juce::ImageButton    scatterBtn;       // use setButtonImages(scatterBtn, "scatterBtn") and has hover/down variants
-    juce::Slider         scatterDepthSlider;
-    juce::ComboBox       scatterDensityBox; // Mild/Normal/Spicy
 
     // Attachments
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> scatterToggleAtt; // bind to mode_Scatter (we'll use button as toggle)
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> scatterDepthAtt;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> scatterDensityAtt;
 
     // Optional: a small pointer to the ScatterWindow instance when opened
     std::unique_ptr<ScatterWindow> scatterWindow; // forward-declare ScatterWindow (create class file if not present)
