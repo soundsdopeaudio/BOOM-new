@@ -3198,6 +3198,8 @@ void BoomAudioProcessor::generateRollBatch(const juce::String& style, int tsNum,
 // ---------- REPLACE entire BoomAudioProcessor::generateDrums(int bars) with this ----------
 void BoomAudioProcessor::generateDrums(int bars)
 {
+    enum class HolyRollieMotion { Stationary = 0, Ascend = 1, Descend = 2 };
+
     // ============================================================
     // NEW DRUM ENGINE (fresh, style-first)
     // - No dependency on boom::drums generator or old style profiles
@@ -3814,14 +3816,13 @@ void BoomAudioProcessor::generateDrums(int bars)
             // stationary / slowly ascending / slowly descending
             // We model this as a velocity ramp (since row must remain the same).
             // ------------------------------------------------------------
-            enum Motion { Stationary = 0, Ascend = 1, Descend = 2 };
-            Motion globalMotion = Stationary;
+            HolyRollieMotion globalMotion = HolyRollieMotion::Stationary;
             {
                 int m = rng.nextInt(100);
-                if (isTrap)        globalMotion = (m < 65 ? Stationary : (m < 83 ? Ascend : Descend));
-                else if (isDrill)  globalMotion = (m < 50 ? Stationary : (m < 75 ? Ascend : Descend));
-                else if (isHipHop) globalMotion = (m < 75 ? Stationary : (m < 88 ? Ascend : Descend));
-                else               globalMotion = (m < 60 ? Stationary : (m < 80 ? Ascend : Descend));
+                if (isTrap)        globalMotion = (m < 65 ? HolyRollieMotion::Stationary : (m < 83 ? HolyRollieMotion::Ascend : HolyRollieMotion::Descend));
+                else if (isDrill)  globalMotion = (m < 50 ? HolyRollieMotion::Stationary : (m < 75 ? HolyRollieMotion::Ascend : HolyRollieMotion::Descend));
+                else if (isHipHop) globalMotion = (m < 75 ? HolyRollieMotion::Stationary : (m < 88 ? HolyRollieMotion::Ascend : HolyRollieMotion::Descend));
+                else               globalMotion = (m < 60 ? HolyRollieMotion::Stationary : (m < 80 ? HolyRollieMotion::Ascend : HolyRollieMotion::Descend));
             }
 
             // ------------------------------------------------------------
@@ -3848,12 +3849,12 @@ void BoomAudioProcessor::generateDrums(int bars)
                     return 3 + rng.nextInt(9);                     // 3..11
                 };
 
-            auto pickBurstMotion = [&]() -> Motion
+            auto pickBurstMotion = [&]() -> HolyRollieMotion
                 {
                     const int v = rng.nextInt(100);
-                    if (v < 40) return Stationary;
-                    if (v < 70) return Ascend;
-                    return Descend;
+                    if (v < 40) return HolyRollieMotion::Stationary;
+                    if (v < 70) return HolyRollieMotion::Ascend;
+                    return HolyRollieMotion::Descend;
                 };
 
             // ------------------------------------------------------------
@@ -3881,8 +3882,8 @@ void BoomAudioProcessor::generateDrums(int bars)
                 const float u = (rollTotalLen <= 1) ? 0.0f : (float)rel / (float)(rollTotalLen - 1);
 
                 int ramp = 0;
-                if (globalMotion == Ascend) ramp = (int)std::round(u * 16.0f);       // +0..+16
-                else if (globalMotion == Descend) ramp = (int)std::round((1.0f - u) * 16.0f);
+                if (globalMotion == HolyRollieMotion::Ascend) ramp = (int)std::round(u * 16.0f);       // +0..+16
+                else if (globalMotion == HolyRollieMotion::Descend) ramp = (int)std::round((1.0f - u) * 16.0f);
 
                 int v = baseVel + ramp;
                 v += rng.nextInt(velRand + 1) - (velRand / 2);
@@ -3904,7 +3905,7 @@ void BoomAudioProcessor::generateDrums(int bars)
 
                 if (startBurst)
                 {
-                    Motion burstMotion = pickBurstMotion();
+                    HolyRollieMotion burstMotion = pickBurstMotion();
                     int burstGrid = pickBurstGrid();
 
                     // If base is 64, still enforce the half-bar max intense period
@@ -3937,8 +3938,8 @@ void BoomAudioProcessor::generateDrums(int bars)
 
                         // Velocity shaping within burst
                         int v = globalVelAt(st);
-                        if (burstMotion == Descend) v = juce::jlimit(1, 127, v - i * 3);
-                        else if (burstMotion == Ascend) v = juce::jlimit(1, 127, v - (hits - 1 - i) * 3);
+                        if (burstMotion == HolyRollieMotion::Descend) v = juce::jlimit(1, 127, v - i * 3);
+                        else if (burstMotion == HolyRollieMotion::Ascend) v = juce::jlimit(1, 127, v - (hits - 1 - i) * 3);
                         else v = juce::jlimit(1, 127, v - i * 1);
 
                         Note n;
