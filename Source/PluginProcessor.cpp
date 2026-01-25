@@ -3875,22 +3875,21 @@ void BoomAudioProcessor::generateDrums(int bars)
             const int velRand = (row == ROW_SNARE) ? 12 : 18;
 
             const int rollTotalLen = endTick - startTick;
-            auto globalVelAt = [&](int tAbs) -> int
-    {
-                    // tAbs in absolute ticks
-                    const int rel = tAbs - startTick;
-                    const float u = (rollTotalLen <= 1) ? 0.0f : (float)rel / (float)(rollTotalLen - 1);
+            auto globalVelAt = [&](int tAbs) -> int {
+                // tAbs in absolute ticks
+                const int rel = tAbs - startTick;
+                const float u = (rollTotalLen <= 1) ? 0.0f : (float)rel / (float)(rollTotalLen - 1);
 
-                    int ramp = 0;
-                    if (globalMotion == Ascend) ramp = (int)std::round(u * 16.0f);       // +0..+16
-                    else if (globalMotion == Descend) ramp = (int)std::round((1.0f - u) * 16.0f);
+                int ramp = 0;
+                if (globalMotion == Ascend) ramp = (int)std::round(u * 16.0f);       // +0..+16
+                else if (globalMotion == Descend) ramp = (int)std::round((1.0f - u) * 16.0f);
 
-                    int v = baseVel + ramp;
-                    v += rng.nextInt(velRand + 1) - (velRand / 2);
+                int v = baseVel + ramp;
+                v += rng.nextInt(velRand + 1) - (velRand / 2);
 
-                    // mild accents every 4 steps when base grid is 16/32-ish
-                    return juce::jlimit(1, 127, v);
-                 };
+                // mild accents every 4 steps when base grid is 16/32-ish
+                return juce::jlimit(1, 127, v);
+            };
             // ------------------------------------------------------------
             // Generate roll: steady grid with occasional burst segments.
             // Since we must remain on ONE row, we represent "ascending/descending"
